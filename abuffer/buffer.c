@@ -2,36 +2,62 @@
 #include "buffer.h"
 #include <string.h>
 
+static int abuffer_do_resize(struct abuffer *buf, int nsz)
+{
+        int osz; /* orignal size */
+        char *tmp;
+
+        _debug("resize >>>>>>, real=%d max=%d left=%d new=%d",
+                        buf->real, buf->max, abuffer_left(buf), nsz);
+
+        tmp = (char *)realloc(buf->start, nsz);
+        if (tmp == NULL) /* use original */
+                return -1;
+
+        osz = abuffer_length(buf);
+        buf->start = tmp;
+        buf->end = buf->start + nsz;
+        buf->tail = buf->start + osz;
+        buf->real = nsz;
+
+        _debug("resize <<<<<<, real=%d max=%d left=%d",
+                        buf->real, buf->max, abuffer_left(buf));
+
+        return abuffer_left(buf);
+}
+
+#define abuffer_check_size(buf)                                \
+        do {                                                   \
+                if (buf->max > 0 && buf->real >= buf->max) {   \
+                        _error("reach top size %d", buf->max); \
+                        return abuffer_left(buf);              \
+                }                                              \
+        } while(0)
+
+int abuffer_exponent_expand(struct abuffer *buf)
+{
+        int nsz;
+
+        abuffer_check_size(buf);
+
+        nsz = buf->real * 2;
+        if (nsz > buf->max)
+                nsz = buf->max;
+
+        return abuffer_do_resize(buf, nsz);
+}
+
 int abuffer_resize(struct abuffer *buf, int expect)
 {
-	int nsz, osz; /* new size, orignal size */
-	char *tmp;
+        int nsz; /* new size */
 
-	if (buf->max > 0 && buf->real >= buf->max) {
-		_error("reach top size %d, expect %d", buf->max, expect);
-		return abuffer_left(buf);
-	}
+        abuffer_check_size(buf);
 
-	for (nsz = buf->real; nsz < expect && nsz < buf->max; nsz *= 2);
-	if (nsz > buf->max)
-		nsz = buf->max;
-	_debug("resize to %d >>>>>>, real=%d max=%d left=%d new=%d",
-			expect, buf->real, buf->max, abuffer_left(buf), nsz);
+        for (nsz = buf->real; nsz < expect && nsz < buf->max; nsz *= 2);
+        if (nsz > buf->max)
+                nsz = buf->max;
 
-	tmp = (char *)realloc(buf->start, nsz);
-	if (tmp == NULL) /* use original */
-		return -1;
-
-	osz = abuffer_length(buf);
-	buf->start = tmp;
-	buf->end = buf->start + nsz;
-	buf->tail = buf->start + osz;
-	buf->real = nsz;
-
-	_debug("resize to %d <<<<<<, real=%d max=%d left=%d",
-			expect, buf->real, buf->max, abuffer_left(buf));
-
-	return abuffer_left(buf);
+        return abuffer_do_resize(buf, nsz);
 }
 
 int abuffer_append(struct abuffer *buf, const char *str, int len)
