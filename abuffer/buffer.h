@@ -25,6 +25,7 @@ struct abuffer {
 	#define _error(fmt, args...)  do { printf("error: " fmt, ## args); putchar('\n'); } while(0);
 #endif
 
+#define abuffer_is_full(buf)  (buf->max > 0 && buf->real >= buf->max)
 #define abuffer_left(buf)     (int)((buf)->end - (buf)->tail)
 #define abuffer_length(buf)   (int)((buf)->tail - (buf)->start)
 #define abuffer_restart(buf)  (buf)->tail = (buf)->start;
