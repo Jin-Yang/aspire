@@ -41,6 +41,7 @@ struct abuffer *abuffer_new(size_t smin, size_t smax);
 void abuffer_destory(struct abuffer *buf);
 int abuffer_append(struct abuffer *buf, const char *str, int len);
 int abuffer_resize(struct abuffer *buf, int expect);
+int abuffer_exponent_expand(struct abuffer *buf);
 
 #endif
 
