@@ -40,6 +40,16 @@ DEF_TEST(case1) {
 	EXPECT_EQ_STR("123456789012345", abuffer_string(buf));
 	abuffer_destory(buf);
 
+	buf = abuffer_new(2, 16);
+        CHECK_NOT_NULL(buf);
+        EXPECT_EQ_INT(2, abuffer_left(buf));
+        EXPECT_EQ_INT(4, abuffer_exponent_expand(buf));
+        EXPECT_EQ_INT(8, abuffer_exponent_expand(buf));
+        EXPECT_EQ_INT(16, abuffer_exponent_expand(buf));
+        EXPECT_EQ_INT(16, abuffer_exponent_expand(buf));
+        EXPECT_EQ_INT(16, abuffer_exponent_expand(buf));
+        abuffer_destory(buf);
+
 	return 0;
 }
 
