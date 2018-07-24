@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct abuffer {
+struct abuff {
 	int min;
 	int max;
 	int real;
@@ -25,12 +25,12 @@ struct abuffer {
 	#define _error(fmt, args...)  do { printf("error: " fmt, ## args); putchar('\n'); } while(0);
 #endif
 
-#define abuffer_is_full(buf)  (buf->max > 0 && buf->real >= buf->max)
-#define abuffer_left(buf)     (int)((buf)->end - (buf)->tail)
-#define abuffer_length(buf)   (int)((buf)->tail - (buf)->start)
-#define abuffer_restart(buf)  (buf)->tail = (buf)->start;
-#define abuffer_string(buf)   ((buf)->start)
-#define abuffer_seal(buf)                       \
+#define abuff_is_full(buf)  (buf->max > 0 && buf->real >= buf->max)
+#define abuff_left(buf)     (int)((buf)->end - (buf)->tail)
+#define abuff_length(buf)   (int)((buf)->tail - (buf)->start)
+#define abuff_restart(buf)  (buf)->tail = (buf)->start;
+#define abuff_string(buf)   ((buf)->start)
+#define abuff_seal(buf)                       \
 	do {                                    \
 		if ((buf)->end == (buf)->tail)  \
 			*((buf)->tail - 1) = 0; \
@@ -38,11 +38,11 @@ struct abuffer {
 			*(buf)->tail = 0;       \
 	} while(0)
 
-struct abuffer *abuffer_new(size_t smin, size_t smax);
-void abuffer_destory(struct abuffer *buf);
-int abuffer_append(struct abuffer *buf, const char *str, int len);
-int abuffer_resize(struct abuffer *buf, int expect);
-int abuffer_exponent_expand(struct abuffer *buf);
+struct abuff *abuff_new(size_t smin, size_t smax);
+void abuff_destory(struct abuff *buf);
+int abuff_append(struct abuff *buf, const char *str, int len);
+int abuff_resize(struct abuff *buf, int expect);
+int abuff_exponent_expand(struct abuff *buf);
 
 #endif
 

@@ -1,4 +1,4 @@
-#include "buffer.h"
+#include "abuff.h"
 
 #include <fcntl.h>
 #include <errno.h>
@@ -22,9 +22,9 @@
         }                                                                             \
 } while(0)
 
-int buffer_read(int fd, struct abuffer **buffer)
+int buffer_read(int fd, struct abuff **buffer)
 {
-        struct abuffer *buf;
+        struct abuff *buf;
         char dropbuf[128];
         int len = 0;
 
@@ -33,19 +33,19 @@ int buffer_read(int fd, struct abuffer **buffer)
         buf = *buffer;
 
         if (buf == NULL) {
-                buf = abuffer_new(4, 4 * 16);
+                buf = abuff_new(4, 4 * 16);
                 if (buf == NULL) {
                         fprintf(stderr, "Create new buffer failed, out of memory\n");
                         return READ_FATAL;
                 }
                 len = buf->min;
                 *buffer = buf;
-        } else if (abuffer_is_full(buf)) {
+        } else if (abuff_is_full(buf)) {
                 read_wrap(dropbuf, sizeof(dropbuf));
                 fprintf(stderr, "Read buffer is full now, drop %d bytes\n", len);
                 return len;
-        } else if (abuffer_left(buf) < 1) {
-                len = abuffer_exponent_expand(buf);
+        } else if (abuff_left(buf) < 1) {
+                len = abuff_exponent_expand(buf);
                 if (len < 0) {
                         fprintf(stderr, "Expand buffer failed, out of memory\n");
                         return READ_FATAL;
@@ -64,7 +64,7 @@ int buffer_read(int fd, struct abuffer **buffer)
 int main(void)
 {
         int rc, fd;
-        struct abuffer *buf = NULL;
+        struct abuff *buf = NULL;
 
         fd = open("test.txt", O_RDONLY);
         if (fd < 0) {
@@ -82,11 +82,11 @@ int main(void)
                 }
         }
 
-        abuffer_seal(buf);
+        abuff_seal(buf);
 
-        fprintf(stdout, "Got %d types, '%s'\n", abuffer_length(buf), abuffer_string(buf));
+        fprintf(stdout, "Got %d types, '%s'\n", abuff_length(buf), abuff_string(buf));
 
-        abuffer_destory(buf);
+        abuff_destory(buf);
 
         return 0;
 }
