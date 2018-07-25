@@ -220,7 +220,9 @@ static int exec_buffer_read(int fd, struct abuff **buffer)
                         return READ_FATAL;
                 }
                 assert(len > 0);
-        }
+        } else {
+		len = abuff_length(buf);
+	}
 
         read_wrap(buf->tail, len);
         buf->tail += len;
