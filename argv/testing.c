@@ -19,12 +19,6 @@ DEF_TEST(strargv_test) {
 		char *errmsg;
         } cases[] = {
 	{
-		"program $1PATH", 0, -1,
-		{NULL}, "Environment begin with digit"
-	}, {
-		"program $(PATH ", 0, -1,
-		{NULL}, "Invalid environment ending"
-	}, {
 		"\" ", 0, -1,
 		{NULL}, "Unterminated quoting"
 	}, {
@@ -42,6 +36,13 @@ DEF_TEST(strargv_test) {
 	}, {    /* quote */
 		"\"/usr/bin/your program\" \"foo\"\"bar\" \"\" \"'\" '\nfoo\n\t bar' \" -f\" 'start' '\"up'", 9, 60,
 		{"/usr/bin/your program", "foobar", "", "'", "\\nfoo\\n\\t bar", " -f", "start", "\"up", NULL}, NULL
+#if ARGV_MACRO
+	}, {
+		"program $1PATH", 0, -1,
+		{NULL}, "Environment begin with digit"
+	}, {
+		"program $(PATH ", 0, -1,
+		{NULL}, "Invalid environment ending"
 	}, {    /* macro, not exists */
 		"program $(ENV_NOT_EXISTS)foo ${ENV_ALSO_NOT_EXISTS}bar ${NOT_EXISTS}", 4, 16,
 		{"program", "foo", "bar", NULL}, NULL
@@ -51,6 +52,7 @@ DEF_TEST(strargv_test) {
 	}, {    /* macro, empty macros */
 		"program $ ${NOT_EXISTS}", 3, 10,
 		{"program", "$", NULL}, NULL
+#endif
 	} };
 
 	CHECK_ZERO(setenv("TEST1", "test1", 1));

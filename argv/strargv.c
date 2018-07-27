@@ -1,5 +1,6 @@
 
-#define ARGV_DEBUG     1
+#define ARGV_DEBUG     0
+#define ARGV_MACRO     1
 
 #include <stdlib.h>
 #include <assert.h>
@@ -15,6 +16,7 @@
 
 #define MAX_ENV_NAME       256
 
+#if ARGV_MACRO
 struct envs {
 	int length;
 	int strlen;
@@ -35,21 +37,26 @@ struct envs {
 		free(env);                          \
 	}                                           \
 } while(0)
+#else
+#define env_destory(env)
+#define macro                0
+#endif
 
 int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 {
 	char *buffer;
 	char *ptr, *begin;
 
-	int i;
-
 	int escaped = 0, inquote = 0, intoken = 0;
 	int targc = 0, numbytes = 0, endnull = 0;
 
+#if ARGV_MACRO
+	int i;
 	int macro = 0, mcount = 1, mnum = 0, cpymacro = 0;
 	char mname[MAX_ENV_NAME], *mval;
 	struct envs *envs = NULL;
 	void *tmptr;
+#endif
 
 	char **cpyargv, *cpyptr;
 	int cpynum = 0;
@@ -127,7 +134,7 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 				escaped = 1;
 			}
 			break;
-
+#if ARGV_MACRO
 		case '$':
 			if (escaped) {
 				escaped = 0;
@@ -221,6 +228,7 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 					mval, envs[mnum - 1].strlen);
 #endif
 			continue;
+#endif
 
 		default:
 			if (escaped)
@@ -268,7 +276,9 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 	intoken = 0;
 	inquote = 0;
 	escaped = 0;
+#if ARGV_MACRO
 	macro = 0;
+#endif
 	endnull = 0;
 	cpyargv[0] = cpyptr;
 
@@ -349,7 +359,7 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 				escaped = 1;
 			}
 			break;
-
+#if ARGV_MACRO
 		case '$':
 			if (escaped) {
 				*cpyptr++ = '$';
@@ -383,6 +393,7 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 
 			cpymacro++;
 			continue;
+#endif
 
 		default:
 			if (escaped)
@@ -406,10 +417,10 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 
 #if ARGV_DEBUG
 	printf("====> END(%d %d-%d) %p\n", numbytes, cpynum, targc, cpyptr);
-	for (i = 0; i < targc; i++)
+	for (int i = 0; i < targc; i++)
 		printf("==>argv[%03d-%p] '%s'\n",
 			i, cpyargv[i], cpyargv[i]);
-	for (i = 0; i < numbytes; i++)
+	for (int i = 0; i < numbytes; i++)
 		printf("'%c' ", *(buffer + (targc + 1) * sizeof(char *) + i));
 #endif
 
