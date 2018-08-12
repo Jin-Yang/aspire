@@ -1,20 +1,24 @@
 
-#define ARGV_DEBUG     0
-#define ARGV_MACRO     1
+#ifndef ARGV_DEBUG
+	#define ARGV_DEBUG             0
+#endif
+
+#ifndef ARGV_MACRO
+	#define ARGV_MACRO             1
+#endif
+
+#ifndef ARGV_MAX_ENV_NAME_LEN
+	#define ARGV_MAX_ENV_NAME_LEN  256
+#endif
 
 #include <stdlib.h>
 #include <assert.h>
-
 #include <string.h>
 
 #if ARGV_DEBUG
 #include <stdio.h>
 #include <ctype.h>
 #endif
-
-#define ARGV_CHAR_NORMAL   1
-
-#define MAX_ENV_NAME       256
 
 #if ARGV_MACRO
 struct envs {
@@ -53,7 +57,7 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 #if ARGV_MACRO
 	int i;
 	int macro = 0, mcount = 1, mnum = 0, cpymacro = 0;
-	char mname[MAX_ENV_NAME], *mval;
+	char mname[ARGV_MAX_ENV_NAME_LEN], *mval;
 	struct envs *envs = NULL;
 	void *tmptr;
 #endif
@@ -181,7 +185,7 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 				if (is_env(*ptr) == 0)
 					break;
 
-				if (mcount < MAX_ENV_NAME - 1)
+				if (mcount < ARGV_MAX_ENV_NAME_LEN - 1)
 					mname[mcount++] = *ptr;
 			}
 			mname[mcount] = 0;
