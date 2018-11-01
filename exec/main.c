@@ -4,7 +4,12 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "abuf.h"
+#include <errno.h>
+#include <assert.h>
+#include <sys/types.h>
+#include <sys/prctl.h>
+
+#include "abuff.h"
 #include "libev/ev.h"
 
 #define EXEC_MIN_BUFFER   4096
@@ -98,6 +103,8 @@ int exec_child_fork(int *fd_in, int *fd_out, int *fd_err)
         } else if (pid == 0) {
                 /* destory all struct if needed */
                 ev_break(EVBREAK_ALL);
+		setpgrp();
+		prctl(PR_SET_PDEATHSIG, SIGKILL);
 
                 /* Close all file descriptors but the pipe end we need. */
                 fdnums = getdtablesize();
@@ -240,10 +247,10 @@ void exec_timeout_cb(EV_P_ ev_timer *w, int revents)
         ctx = (struct exec_context *)w->data;
         if (++ctx->count >= 3) {
                 _error("Timeout %d times, force quit", ctx->count);
-                kill(ctx->wchild.pid, SIGKILL);
+                kill(-ctx->wchild.pid, SIGKILL);
         } else {
                 _error("Timeout %d times, kill it", ctx->count);
-                kill(ctx->wchild.pid, SIGINT);
+                kill(-ctx->wchild.pid, SIGINT);
                 ev_timer_set(w, 3., 0.);
                 ev_timer_start(w);
         }
@@ -267,7 +274,7 @@ void exec_stdout_cb(EV_P_ ev_io *w, int revents)
                 _error("STDOUT: Got a fatal error, kill %d", ctx->wchild.pid);
                 ev_io_stop(w);
                 close(w->fd);
-                kill(ctx->wchild.pid, SIGKILL);
+                kill(-ctx->wchild.pid, SIGKILL);
                 return;
         }
 }
@@ -353,6 +360,13 @@ struct exec_context *exec_start_job(void)
 int main(void)
 {
         EV_P EV_DEFAULT;
+
+        /* Become reaper of our children */
+        if (prctl(PR_SET_CHILD_SUBREAPER, 1) < 0) {
+                _error("failed to make us a subreaper, %s.", strerror(errno));
+                if (errno == EINVAL)
+                        _error("Perhaps the kernel version is too old (< 3.4?).");
+        }
 
         exec_start_job();
 
