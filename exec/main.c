@@ -190,6 +190,7 @@ failed:
         } else if (len == 0) {                                               \
                 return READ_EOF;                                             \
         }                                                                    \
+        _debug("Read from %d with %d bytes.", fd, len);                      \                                                                \
 } while(0)
 
 static int exec_buffer_read(int fd, struct abuff **buffer)
@@ -267,14 +268,13 @@ void exec_stdout_cb(EV_P_ ev_io *w, int revents)
         rc = exec_buffer_read(w->fd, &ctx->outbuf);
         if (rc == READ_EOF) {
                 _info("STDOUT: Read end of file");
-                ev_io_stop(w);
-                close(w->fd);
+                exec_close_evfd(w);
                 return;
         } else if (rc == READ_FATAL) {
                 _error("STDOUT: Got a fatal error, kill %d", ctx->wchild.pid);
-                ev_io_stop(w);
-                close(w->fd);
-                kill(-ctx->wchild.pid, SIGKILL);
+                exec_close_evfd(w);
+		if (ctx->wchild.pid > 1)
+                	kill(-ctx->wchild.pid, SIGKILL);
                 return;
         }
 }
@@ -307,11 +307,24 @@ void exec_stderr_cb(EV_P_ ev_io *w, int revents)
 void exec_child_cb(EV_P_ ev_child *w, int revents)
 {
         (void) revents;
+	int rc;
         struct exec_context *ctx;
 
         ctx = w->data;
         _info("Process %d exited with status %x", w->rpid, w->rstatus);
-
+	
+	exec_close_evfd(&ctx->werr);
+	ev_timer_stop(&ctx->wtimeout);
+	ev_child_stop(&ctx->wchild);
+	ctx->wchild.pid = -1;
+	
+	if (ctx->wout.fd > 0) {
+		do {
+			rc = exec_buffer_read(ctx->wout.fd, &ctx->outbuf);
+		} while(rc > 0 || rc == READ_RETRY);
+	}
+	exec_close_evfd(&ctx->wout);
+	
         if (ctx->outbuf) {
                 abuff_seal(ctx->outbuf);
                 _info("Got %d bytes >>>>>>>>\n%s\n<<<<<<<<",
