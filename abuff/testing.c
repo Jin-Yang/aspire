@@ -10,9 +10,7 @@ DEF_TEST(case1) {
 	EXPECT_EQ_INT(5, abuff_append(buf, "12345", 5));
 	abuff_seal(buf);
 	EXPECT_EQ_STR("12345", abuff_string(buf));
-	abuff_destory(buf);
-
-	buf = abuff_new(2, 16);
+	abuff_destory(buf); buf = abuff_new(2, 16);
 	CHECK_NOT_NULL(buf);
 	EXPECT_EQ_INT(5, abuff_append(buf, "12345", 5));
 	EXPECT_EQ_INT(5, abuff_length(buf));
@@ -52,9 +50,29 @@ DEF_TEST(case1) {
 	return 0;
 }
 
+DEF_TEST(shrink) {
+	int i;
+	struct abuff *buf;
+
+	buf = abuff_new(2, 16);
+	EXPECT_EQ_INT(16, abuff_append(buf, "12345678901234567890", 17));
+	for (i = 0; i < ABUFF_SHRINK + 2; i++) {
+		abuff_restart(buf);
+		EXPECT_EQ_INT(7, abuff_append(buf, "12345678901234567890", 7));
+		if (i >= ABUFF_SHRINK)
+			EXPECT_EQ_INT(8, buf->real);
+		else
+			EXPECT_EQ_INT(16, buf->real);
+	}
+        abuff_destory(buf);
+
+	return 0;
+}
+
 int main(void)
 {
 	RUN_TEST(case1);
+	RUN_TEST(shrink);
 
 	END_TEST;
 }

@@ -2,6 +2,12 @@
 #include "abuff.h"
 #include <string.h>
 
+#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
+	#define _debug(...) do { printf("debug: " __VA_ARGS__); putchar('\n'); } while(0);
+#elif defined __GNUC__
+	#define _debug(fmt, args...)  do { printf("debug: " fmt, ## args); putchar('\n'); } while(0);
+#endif
+
 static int abuff_do_resize(struct abuff *buf, int nsz)
 {
         int osz; /* orignal size */
@@ -26,20 +32,18 @@ static int abuff_do_resize(struct abuff *buf, int nsz)
         return abuff_left(buf);
 }
 
-#define abuff_check_size(buf)                                \
-        do {                                                   \
-                if (buf->max > 0 && buf->real >= buf->max) {   \
-                        _error("reach top size %d", buf->max); \
-                        return abuff_left(buf);              \
-                }                                              \
-        } while(0)
+#define abuff_check_size(buf) do {                     \
+	if (buf->max > 0 && buf->real >= buf->max) {   \
+		_debug("reach top size %d", buf->max); \
+		return abuff_left(buf);                \
+	}                                              \
+} while(0)
 
 int abuff_exponent_expand(struct abuff *buf)
 {
         int nsz;
 
         abuff_check_size(buf);
-
         nsz = buf->real * 2;
         if (nsz > buf->max)
                 nsz = buf->max;
@@ -60,6 +64,36 @@ int abuff_resize(struct abuff *buf, int expect)
         return abuff_do_resize(buf, nsz);
 }
 
+#if ABUFF_SHRINK
+void abuff_try_shrink(struct abuff *buf)
+{
+	int osz, nsz;
+	char *tmp;
+
+
+	osz = abuff_length(buf);
+	nsz = buf->real / 2;
+	buf->tail = buf->start;
+	if (osz > nsz) {
+		buf->shrink = 0;
+		return;
+	}
+
+	if (++buf->shrink >= ABUFF_SHRINK) {
+		_debug("shrink >>>>>>, real=%d max=%d length=%d nsz=%d",
+			buf->real, buf->max, osz, nsz);
+		tmp = (char *)realloc(buf->start, nsz);
+		if (tmp == NULL) /* use original */
+			return;
+		buf->start = tmp;
+		buf->end = buf->start + nsz;
+		buf->tail = tmp;
+		buf->real = nsz;
+		buf->shrink = 0;
+	}
+}
+#endif
+
 int abuff_append(struct abuff *buf, const char *str, int len)
 {
 	int rc;
@@ -76,11 +110,10 @@ int abuff_append(struct abuff *buf, const char *str, int len)
 		else
 			return rc;
 	}
-
-	_debug("append %d bytes, real=%d max=%d left=%d",
-			len, buf->real, buf->max, abuff_left(buf));
 	memcpy(buf->tail, str, len);
 	buf->tail += len;
+	_debug("append %d bytes, real=%d max=%d left=%d",
+			len, buf->real, buf->max, abuff_left(buf));
 
 	return len;
 }
@@ -103,17 +136,20 @@ struct abuff *abuff_new(size_t smin, size_t smax)
 	if (smin == 0 || (smax != 0 && smax < smin))
 		return NULL;
 
-	buf = (struct abuff *)calloc(1, sizeof(struct abuff));
+	buf = (struct abuff *)malloc(sizeof(struct abuff));
 	if (buf == NULL)
 		return NULL;
 
-	buf->min = smin;
-	buf->max = smax;
+	buf->min = smin; buf->max = smax;
 	buf->real = buf->min;
 
 	buf->start = (char *)malloc(buf->real);
 	buf->tail = buf->start;
 	buf->end = buf->start + buf->real;
+
+#if ABUFF_SHRINK
+	buf->shrink = 0;
+#endif
 
 	return buf;
 }
