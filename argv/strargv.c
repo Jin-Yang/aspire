@@ -429,7 +429,7 @@ int strargv(const char *str, int *argc, char ***argv, char **errmsg)
 #endif
 
 	assert(targc == cpynum);
-	assert((cpyptr - buffer) == (numbytes + (targc + 1) * sizeof(char *)));
+	assert((cpyptr - buffer) == (int)(numbytes + (targc + 1) * sizeof(char *)));
 	env_destory(envs);
 
 	*argc = targc + 1;

@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "testing.h"
-#include "strargv.h"
+#include "../strargv.h"
 
 DEF_TEST(strargv_test) {
 	char *errmsg;

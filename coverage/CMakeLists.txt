@@ -1,0 +1,29 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+PROJECT(hello)
+
+OPTION(WITH_UNIT_TESTS "Compile with unit tests" OFF)
+OPTION(WITH_CONVERAGE  "Enable coverage" OFF)
+
+SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -g")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+
+IF(WITH_CONVERAGE)
+        SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
+        #SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
+ENDIF()
+
+MESSAGE(STATUS "Unit tests ... ... ${WITH_UNIT_TESTS}")
+MESSAGE(STATUS "Converage  ... ... ${WITH_CONVERAGE}")
+
+SET(SRC_LIST main.c load.c)
+ADD_EXECUTABLE(hello ${SRC_LIST})
+
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+
+ADD_SUBDIRECTORY(libs/libmock)
+
+IF(WITH_UNIT_TESTS)
+        ENABLE_TESTING()
+        ADD_SUBDIRECTORY(tests)
+ENDIF()

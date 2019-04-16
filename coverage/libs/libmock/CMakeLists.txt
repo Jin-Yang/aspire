@@ -1,0 +1,2 @@
+SET(LIBMOCK_SRC testing.h testing.c)
+ADD_LIBRARY(mockx STATIC ${LIBMOCK_SRC})  # OR SHARED
